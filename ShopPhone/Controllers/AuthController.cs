@@ -19,37 +19,95 @@ namespace ShopNoiThat.Controllers
         // dò vs database 
         public void login(FormCollection fc)
         {
+            // 1. Bắt buộc phải có reCAPTCHA response
+            string recaptchaResponse = Request["g-recaptcha-response"];
+            if (string.IsNullOrWhiteSpace(recaptchaResponse) || !IsCaptchaValid(recaptchaResponse))
+            {
+                Message.set_flash("Vui lòng xác nhận bạn không phải robot", "error");
+                if (!Response.IsRequestBeingRedirected)
+                    Response.Redirect("~/");
+                return;
+            }
+
+            // 2. Tiếp tục xử lý đăng nhập như cũ
             string Username = fc["uname"];
             string Pass = Mystring.ToMD5(fc["psw"]);
-            string PassNoMD5 = fc["psw"];
-            var user_account = db.users.Where(m => (m.username == Username) && (m.access == 1));
+            var user_account = db.users.Where(m => m.username == Username && m.access == 1);
 
-            if (user_account.Count() == 0)
+            // Kiểm tra số lần đăng nhập sai và thời gian khóa
+            if (Session["failed_attempts"] == null)
+                Session["failed_attempts"] = 0;
+
+            DateTime now = DateTime.Now;
+            DateTime? lockoutTime = Session["lockout_time"] as DateTime?;
+
+            if (lockoutTime != null && lockoutTime > now)
+            {
+                TimeSpan remaining = lockoutTime.Value - now;
+                int secondsLeft = (int)Math.Ceiling(remaining.TotalSeconds);
+                Message.set_flash($"Tài khoản của bạn đang bị khóa, vui lòng thử lại sau {secondsLeft} giây.", "error");
+                if (!Response.IsRequestBeingRedirected)
+                    Response.Redirect("~/");
+                return;
+            }
+
+            int failedAttempts = (int)Session["failed_attempts"];
+
+            // Kiểm tra xem tên tài khoản có tồn tại không
+            if (!user_account.Any())
             {
                 Message.set_flash("Tên đăng nhập không tồn tại", "error");
             }
             else
             {
-                var pass_account = db.users.Where(m => m.status == 1 && (m.password == Pass ) && (m.access == 1));
-
-                if (pass_account.Count() == 0)
+                var pass_account = db.users.Where(m => m.status == 1 && m.password == Pass && m.access == 1);
+                if (!pass_account.Any())
                 {
-                    Message.set_flash("Mật khẩu không đúng", "error");
-                }
+                    failedAttempts++;
+                    Session["failed_attempts"] = failedAttempts;
 
+                    if (failedAttempts >= 3)
+                    {
+                        Session["lockout_time"] = DateTime.Now.AddSeconds(35); // Khóa 20 giây
+                        Message.set_flash("Tài khoản của bạn bị khóa trong 35 giây do nhập sai mật khẩu quá nhiều lần.", "error");
+                    }
+                    else
+                    {
+                        Message.set_flash("Mật khẩu không đúng", "error");
+                    }
+                }
                 else
                 {
+                    // Đăng nhập thành công
+                    Session["failed_attempts"] = 0;
+                    Session["lockout_time"] = null;
+
                     var user = user_account.First();
                     Session["id"] = user.ID;
                     Session["user"] = user.username;
-                    ViewBag.name = Session["user"];
-                    if (!Response.IsRequestBeingRedirected)
-                        Message.set_flash("Đăng nhập thành công", "success");
-                        Response.Redirect("~/");
+
+                    Message.set_flash("Đăng nhập thành công", "success");
+                    Response.Redirect("~/");
+                    return;
                 }
             }
+
             if (!Response.IsRequestBeingRedirected)
                 Response.Redirect("~/");
+        }
+
+        private bool IsCaptchaValid(string response)
+        {
+            // Thay bằng Secret Key của bạn (không để xuống dòng)
+            var secret = "6LfoCywrAAAAAP5pQuyrBV1ZvQ3OpfS5UgJ2Ags-\r\n";
+            using (var client = new WebClient())
+            {
+                var result = client.DownloadString(
+                    $"https://www.google.com/recaptcha/api/siteverify?secret={secret}&response={response}"
+                );
+                var obj = Newtonsoft.Json.Linq.JObject.Parse(result);
+                return (bool)obj["success"];
+            }
         }
         public void logout()
         {
@@ -62,21 +120,31 @@ namespace ShopNoiThat.Controllers
         {
             string uname = fc["uname"];
             string fname = fc["fname"];
-            string Pass = Mystring.ToMD5(fc["psw"]);
+            string rawPassword = fc["psw"];  // lấy mật khẩu gốc
             string email = fc["email"];
             string phone = fc["phone"];
+
+            // Kiểm tra mật khẩu mạnh
+            if (!IsPasswordStrong(rawPassword))
+            {
+                Message.set_flash("Mật khẩu yếu, vui lòng chọn mật khẩu mạnh hơn (ít nhất 8 ký tự, chứa chữ hoa, thường, số và ký tự đặc biệt)", "error");
+                Response.Redirect("~/");
+                return;
+            }
+
             if (ModelState.IsValid)
             {
                 var Luser = db.users.Where(m => m.status == 1 && m.username == uname && m.access == 1);
                 if (Luser.Count() > 0)
                 {
-                    Message.set_flash("Tên Đăng nhập đã tồn tại", "success");
+                    Message.set_flash("Tên Đăng nhập đã tồn tại", "error");
                     Response.Redirect("~/");
+                    return;
                 }
                 else
                 {
                     muser.img = "defalt.png";
-                    muser.password = Pass;
+                    muser.password = Mystring.ToMD5(rawPassword);  // mã hóa mật khẩu
                     muser.username = uname;
                     muser.fullname = fname;
                     muser.email = email;
@@ -90,10 +158,36 @@ namespace ShopNoiThat.Controllers
                     muser.status = 1;
                     db.users.Add(muser);
                     db.SaveChanges();
-                    Message.set_flash("Tạo user  thành công", "success");
+                    Message.set_flash("Tạo user thành công", "success");
                     Response.Redirect("~/");
                 }
             }
+        }
+        public bool IsPasswordStrong(string password)
+        {
+            if (string.IsNullOrEmpty(password))
+                return false;
+
+            if (password.Length < 8)
+                return false;
+
+            // Chứa ký tự đặc biệt
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[!@#$%^&*()_+=\[{\]};:<>|./?,-]"))
+                return false;
+
+            // Chứa chữ hoa
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[A-Z]"))
+                return false;
+
+            // Chứa chữ thường
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[a-z]"))
+                return false;
+
+            // Chứa số
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[0-9]"))
+                return false;
+
+            return true;
         }
         // quên pass chuyển trang kp
         public ActionResult forgetpass()
@@ -114,6 +208,8 @@ namespace ShopNoiThat.Controllers
             }
             return View("_newPasswordFG", muser); // nhập mk new kp
         }
+        // quên pass chuyển trang kp
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         /*

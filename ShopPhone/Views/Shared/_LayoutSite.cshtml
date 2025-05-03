@@ -57,13 +57,13 @@
         <div class="container-fluid bg-light pt-4 ">
             <div class="container">
                 <div class="row ">
-                   
+
                     <div class="col-md-4">
                         <p class="font-dam text-xanhduong">VỀ CHÚNG TÔI</p>
                         <ul class="list-unstyled text-nau">
-                            <li><a href=""  data-toggle="modal" data-target="#myModal_login">Đăng nhập</a></li>
-                            <li><a href="" data-toggle="modal" data-target="#myModal_signup" >Đăng ký</a></li>
-                            <li><a  href="~/lien-he">Liên hệ</a></li>
+                            <li><a href="" data-toggle="modal" data-target="#myModal_login">Đăng nhập</a></li>
+                            <li><a href="" data-toggle="modal" data-target="#myModal_signup">Đăng ký</a></li>
+                            <li><a href="~/lien-he">Liên hệ</a></li>
                             <li><a href="~/bai-viet">Bài viết</a></li>
                         </ul>
                     </div>
@@ -95,7 +95,7 @@
 
     </section>
     @*<div class="zalo-chat-widget" data-oaid="2618435205887793057" data-welcome-message="Rất vui khi được hỗ trợ bạn!" data-autopopup="0" data-width="350" data-height="420"></div>
-    <script src="https://sp.zalo.me/plugins/sdk.js"></script>*@
+        <script src="https://sp.zalo.me/plugins/sdk.js"></script>*@
     <!-- modal login-->
     <div class="container">
         <!-- Button to Open the Modal -->
@@ -108,6 +108,7 @@
                         <h4 class="modal-title">Đăng Nhập</h4>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
+
                     <form method="post" name="login" action="/login">
                         <div class="container">
                             <label for="uname"><b>Tên Đăng Nhập</b></label>
@@ -115,6 +116,9 @@
 
                             <label for="psw"><b>Mật Khẩu</b></label>
                             <input type="password" placeholder="Mật Khẩu" name="psw" value="123456" id="psw" required>
+                            <!-- Thêm trong phần form trước nút đăng nhập -->
+                            <div class="g-recaptcha" data-sitekey="6LfoCywrAAAAAPvjdaOJ_tnFPmlRarM7Rs-7j36O
+"></div>
 
                             <button type="submit" id="submit-login" class="btn-button w-100 bg-danger">Login</button>
                         </div>
@@ -139,7 +143,7 @@
                         <h4 class="modal-title">Đăng Kí</h4>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
-                    <form method="post" name="register" id="form-register" action="/register  ">
+                    <form method="post" name="register" id="form-register" action="/register">
                         <div class="container">
                             <label><b>Tên Đăng Nhập</b></label>
                             <input type="text" placeholder="Tên Đăng Nhập" name="uname" required>
@@ -148,10 +152,24 @@
                             <input type="text" placeholder="Tên Đầy Đủ" name="fname" required>
 
                             <label><b>Mật Khẩu</b></label>
-                            <input type="password" placeholder="Mật Khẩu" name="psw" id="psww" required>
+                            <!-- Thay đổi placeholder và thêm pattern cho mật khẩu mạnh -->
+                            <label><b>Mật Khẩu</b></label>
+                            <input type="password"
+                                   class="form-control"
+                                   placeholder="Mật Khẩu"
+                                   name="psw"
+                                   id="psww"
+                                   required
+                                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[&#64;&#36;!%*?&])[A-Za-z\d&#64;&#36;!%*?&]{8,}"
+                                   title="Mật khẩu tối thiểu 8 ký tự, chứa chữ hoa, chữ thường, số và ký tự đặc biệt.">
+
+                            <!-- Biểu tượng mắt để hiển thị mật khẩu -->
+                            <span toggle="#psww" class="fa fa-eye toggle-password" style="cursor: pointer;"></span>
 
                             <label><b>Nhập lại mật Khẩu</b></label>
                             <input type="password" placeholder="Nhập lại mật Khẩu" name="repsw" id="repsww" required>
+                            <span toggle="#psww" class="fa fa-eye toggle-password" style="cursor: pointer;"></span>
+
                             <span class="text-danger" id="span-alert"></span>
 
                             <label><b>Email</b></label>
@@ -160,7 +178,7 @@
                             <label><b>Số Điện Thoại</b></label>
                             <input type="tel" placeholder="Số Điện thoại" name="phone" required>
 
-                            <button type="submit" id="abc" class="btn-button w-100 bg-danger">register</button>
+                            <button type="submit" id="abc" class="btn-button w-100 bg-danger">Register</button>
                         </div>
                         <div class="container" style="background-color:#f1f1f1">
                             <button type="button" class="btn-button bg-danger" data-dismiss="modal">Cancel</button>
@@ -172,6 +190,7 @@
     </div>
     <!-- modal signup-->
     <script>
+
         //animation load page
         $(window).on('load', function (event) {
             $('.loading-page-effect').fadeOut('fast');
@@ -188,11 +207,35 @@
                 }
             });
         });
+        $(document).ready(function () {
+            // Thêm sự kiện khi nhấn vào biểu tượng mắt
+            $(".toggle-password").click(function () {
+                var input = $($(this).attr("toggle"));
+
+                // Kiểm tra kiểu của input (password hay text)
+                if (input.attr("type") === "password") {
+                    input.attr("type", "text");
+                    $(this).removeClass("fa-eye").addClass("fa-eye-slash");
+                } else {
+                    input.attr("type", "password");
+                    $(this).removeClass("fa-eye-slash").addClass("fa-eye");
+                }
+            });
+        });
+
     </script>
     <script src="~/public/js/main.js"></script>
     <script src="~/public/js/popper.min.js"></script>
     <script src="~/public/js/bootstrap.min.js"></script>
     <style>
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+
         .arrow-up {
             position: absolute;
             width: 100px;
@@ -206,3 +249,4 @@
 
 
 </html>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
