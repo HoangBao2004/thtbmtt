@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@if (TempData["logoutMessage"] != null)
+{
+    <div class="alert alert-warning">
+        @TempData["logoutMessage"]
+    </div>
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +22,7 @@
                     <h3 class="text-center font-weight-bold text-cam">Đăng Nhập</h3>
                     <form action="" method="post" name="from_login">
                         <label for="psw"><b class="text-secondary ">Tên Đăng Nhập</b></label>
-                        <input type="text" placeholder="Username"  name="username" required>
+                        <input type="text" placeholder="Username" name="username" required>
                         <label for="psw"><b class="text-secondary">Mật Khẩu</b></label>
                         <input type="password" placeholder="Password" name="password" required>
                         <button class=" bg-success btn-button  w-100">Đăng Nhập</button>            <!-- mk 123456 -->

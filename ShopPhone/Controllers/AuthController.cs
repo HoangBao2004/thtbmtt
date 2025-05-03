@@ -181,7 +181,7 @@ Nếu đối tượng Muser không hợp lệ, phương thức trả về view "
                 var item = db.users.Where(m => m.access == 1 && m.status == 1 && m.username == username).First();
                 // email gửi đi và email nhận
                 MailMessage mm = new MailMessage(Util.email, item.email);
-                mm.Subject = "Cấp Lại Mật khẩu Shop Cây Cảnh";
+                mm.Subject = "Cấp Lại Mật khẩu Shop noi that";
                 mm.Body = "Dear Mr." + item.fullname + "," +
                     "Chúng tôi đã nhận được yêu cầu reset đổi mật khẩu của bạn, vui lòng tạo mới mật khẩu qua đường dẫn sau : http://localhost:22222/newPass/" + item.ID + "";
                 mm.IsBodyHtml = false;

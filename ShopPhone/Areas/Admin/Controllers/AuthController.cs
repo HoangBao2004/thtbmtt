@@ -21,56 +21,53 @@ namespace ShopNoiThat.Areas.Admin.Controllers
         [HttpPost]
         public ActionResult login(FormCollection fc)
         {
-            String Username = fc["username"];
+            string Username = fc["username"];
             string Pass = Mystring.ToMD5(fc["password"]);
-            var user_account = db.users.Where(m => m.access != 1 && m.status == 1 && (m.username == Username));
-            var userC = db.users.Where(m => m.username.Equals(Username) && m.access == 1).ToList();
-            if (userC.Any())
+
+            // Lấy người dùng đúng username và status = 1
+            var user_account = db.users.SingleOrDefault(m => m.status == 1 && m.username == Username);
+
+            if (user_account == null)
             {
-                ViewBag.error = "Bạn không có quyền đăng nhập";
+                ViewBag.error = "Tên đăng nhập không đúng hoặc tài khoản đã bị khóa.";
             }
-            else {
-            if (user_account.Count() == 0)
+            else if (user_account.password != Pass)
             {
-                ViewBag.error = "Tên Đăng Nhập Không Đúng";
+                ViewBag.error = "Mật khẩu không đúng.";
             }
             else
             {
-                var pass_account = db.users.Where(m => m.access != 1 && m.status == 1 && m.password == Pass );
-                if (pass_account.Count() == 0)
+                // Đăng nhập thành công
+                role role = db.roles.FirstOrDefault(m => m.parentId == user_account.access);
+                var userSession = new Userlogin
                 {
-                    ViewBag.error = "Mật Khẩu Không Đúng";
-                }
+                    UserName = user_account.username,
+                    UserID = user_account.ID,
+                    GroupID = role?.GropID,
+                    AccessName = role?.accessName
+                };
 
-                else
-                {
-                    var user = user_account.First();
-                    role role = db.roles.Where(m=>m.parentId == user.access).First();                   
-                    var userSession = new Userlogin();
-                    userSession.UserName = user.username;
-                    userSession.UserID = user.ID;
-                    userSession.GroupID = role.GropID;
-                    userSession.AccessName = role.accessName;
-                    Session.Add(CommonConstants.USER_SESSION, userSession);
-                    var i = Session["SESSION_CREDENTIALS"];
-                    Session["Admin_id"] = user.ID;
-                    Session["Admin_user"] = user.username;
-                    Session["Admin_fullname"] = user.fullname;
-                    Response.Redirect("~/Admin");
-                }
+                Session.Add(CommonConstants.USER_SESSION, userSession);
+                Session["Admin_id"] = user_account.ID;
+                Session["Admin_user"] = user_account.username;
+                Session["Admin_fullname"] = user_account.fullname;
+
+                return Redirect("~/Admin");
             }
-            }
-            ViewBag.sess = Session["Admin_id"];
+
             return View("_login");
-            
         }
+
         // khi user đăng xuất
         public ActionResult logout()
         {
             Session["Admin_id"] = "";
             Session["Admin_user"] = "";
             Response.Redirect("~/Admin");
-            return View();
+            Session.Clear(); // xóa toàn bộ session
+            TempData["logoutMessage"] = "Phiên đăng nhập đã hết hạn hoặc bạn đã đăng xuất.";
+            return RedirectToAction("login", "Auth");
+            
         }
  
         // GET: Admin/User/Edit/5
