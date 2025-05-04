@@ -34,6 +34,8 @@ namespace ShopNoiThat.Controllers
                     Response.Redirect("~/");
                 return;
             }
+
+
             string Username = fc["uname"];
             string Pass = Mystring.ToMD5(fc["psw"]);
 
