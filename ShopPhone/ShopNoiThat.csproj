@@ -139,6 +139,7 @@
     <Compile Include="Controllers\FavoriteProductController.cs" />
     <Compile Include="Controllers\SiteController.cs" />
     <Compile Include="Controllers\UserController.cs" />
+    <Compile Include="Filters\CustomRequireHttpsAttribute.cs" />
     <Compile Include="Library\Message.cs" />
     <Compile Include="Controllers\LienheController.cs" />
     <Compile Include="Controllers\ModuleController.cs" />
