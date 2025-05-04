@@ -57,13 +57,13 @@
         <div class="container-fluid bg-light pt-4 ">
             <div class="container">
                 <div class="row ">
-                   
+
                     <div class="col-md-4">
                         <p class="font-dam text-xanhduong">VỀ CHÚNG TÔI</p>
                         <ul class="list-unstyled text-nau">
-                            <li><a href=""  data-toggle="modal" data-target="#myModal_login">Đăng nhập</a></li>
-                            <li><a href="" data-toggle="modal" data-target="#myModal_signup" >Đăng ký</a></li>
-                            <li><a  href="~/lien-he">Liên hệ</a></li>
+                            <li><a href="" data-toggle="modal" data-target="#myModal_login">Đăng nhập</a></li>
+                            <li><a href="" data-toggle="modal" data-target="#myModal_signup">Đăng ký</a></li>
+                            <li><a href="~/lien-he">Liên hệ</a></li>
                             <li><a href="~/bai-viet">Bài viết</a></li>
                         </ul>
                     </div>
@@ -95,7 +95,7 @@
 
     </section>
     @*<div class="zalo-chat-widget" data-oaid="2618435205887793057" data-welcome-message="Rất vui khi được hỗ trợ bạn!" data-autopopup="0" data-width="350" data-height="420"></div>
-    <script src="https://sp.zalo.me/plugins/sdk.js"></script>*@
+        <script src="https://sp.zalo.me/plugins/sdk.js"></script>*@
     <!-- modal login-->
     <div class="container">
         <!-- Button to Open the Modal -->
@@ -115,6 +115,8 @@
 
                             <label for="psw"><b>Mật Khẩu</b></label>
                             <input type="password" placeholder="Mật Khẩu" name="psw" value="123456" id="psw" required>
+                            <div class="g-recaptcha" data-sitekey="6LfoCywrAAAAAPvjdaOJ_tnFPmlRarM7Rs-7j36O
+"></div>
 
                             <button type="submit" id="submit-login" class="btn-button w-100 bg-danger">Login</button>
                         </div>
@@ -206,3 +208,55 @@
 
 
 </html>
+<script>
+
+    //animation load page
+    $(window).on('load', function (event) {
+        $('.loading-page-effect').fadeOut('fast');
+        @@ -207, 35 + 188, 11 @@
+                }
+            });
+        });
+    $(document).ready(function () {
+        // Thêm sự kiện khi nhấn vào biểu tượng mắt
+        $(".toggle-password").click(function () {
+            var input = $($(this).attr("toggle"));
+
+            // Kiểm tra kiểu của input (password hay text)
+            if (input.attr("type") === "password") {
+                input.attr("type", "text");
+                $(this).removeClass("fa-eye").addClass("fa-eye-slash");
+            } else {
+                input.attr("type", "password");
+                $(this).removeClass("fa-eye-slash").addClass("fa-eye");
+            }
+        });
+    });
+
+</script>
+<script src="~/public/js/main.js"></script>
+<script src="~/public/js/popper.min.js"></script>
+<script src="~/public/js/bootstrap.min.js"></script>
+<style>
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2em;
+    }
+
+    .arrow-up {
+        position: absolute;
+        width: 100px;
+        height: 0;
+        width: 65px;
+        height: 25px;
+        background: red;
+    }
+</style>
+</body>
+
+
+</html>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>

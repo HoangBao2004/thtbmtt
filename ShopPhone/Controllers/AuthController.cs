@@ -19,6 +19,14 @@ namespace ShopNoiThat.Controllers
         // dò vs database 
         public void login(FormCollection fc)
         {
+            string recaptchaResponse = Request["g-recaptcha-response"];
+            if (string.IsNullOrWhiteSpace(recaptchaResponse) || !IsCaptchaValid(recaptchaResponse))
+            {
+                Message.set_flash("Vui lòng xác nhận bạn không phải robot", "error");
+                if (!Response.IsRequestBeingRedirected)
+                    Response.Redirect("~/");
+                return;
+            }
             string Username = fc["uname"];
             string Pass = Mystring.ToMD5(fc["psw"]);
             string PassNoMD5 = fc["psw"];
@@ -50,6 +58,19 @@ namespace ShopNoiThat.Controllers
             }
             if (!Response.IsRequestBeingRedirected)
                 Response.Redirect("~/");
+        }
+        private bool IsCaptchaValid(string response)
+        {
+            // Thay bằng Secret Key của bạn (không để xuống dòng)
+            var secret = "6LfoCywrAAAAAP5pQuyrBV1ZvQ3OpfS5UgJ2Ags-\r\n";
+            using (var client = new WebClient())
+            {
+                var result = client.DownloadString(
+                    $"https://www.google.com/recaptcha/api/siteverify?secret={secret}&response={response}"
+                );
+                var obj = Newtonsoft.Json.Linq.JObject.Parse(result);
+                return (bool)obj["success"];
+            }
         }
         public void logout()
         {
