@@ -9,7 +9,8 @@ using System.Web;
 using System.Web.Mvc;
 using System.Net.Mail;
 using ShopNoiThat.Library;
-
+using System.Text.RegularExpressions;
+using System.Web.Mvc;
 namespace ShopNoiThat.Controllers
 {
 
@@ -127,19 +128,33 @@ namespace ShopNoiThat.Controllers
             Response.Redirect("~/");
             Message.set_flash("Đăng xuất thành công", "success");
         }
+
         public void register(Muser muser, FormCollection fc)
         {
             string uname = fc["uname"];
             string fname = fc["fname"];
-            string Pass = Mystring.ToMD5(fc["psw"]);
+            string rawPass = fc["psw"];  // mật khẩu gốc chưa băm
             string email = fc["email"];
             string phone = fc["phone"];
+
+            // Kiểm tra mật khẩu mạnh (>= 8 ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt)
+            var passPattern = new Regex(@"^(?=.{8,}$)(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\W).*$");
+            if (!passPattern.IsMatch(rawPass))
+            {
+                Message.set_flash("Mật khẩu phải chứa ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.", "error");
+                Response.Redirect("~/");
+                return;
+            }
+
+            // Chuyển mật khẩu sang MD5
+            string Pass = Mystring.ToMD5(rawPass);
+
             if (ModelState.IsValid)
             {
                 var Luser = db.users.Where(m => m.status == 1 && m.username == uname && m.access == 1);
                 if (Luser.Count() > 0)
                 {
-                    Message.set_flash("Tên Đăng nhập đã tồn tại", "success");
+                    Message.set_flash("Tên Đăng nhập đã tồn tại", "error");
                     Response.Redirect("~/");
                 }
                 else
@@ -150,16 +165,19 @@ namespace ShopNoiThat.Controllers
                     muser.fullname = fname;
                     muser.email = email;
                     muser.phone = phone;
-                    muser.gender = "nam";
+                    muser.gender = "nam";  // Bạn có thể thay đổi theo nhu cầu
                     muser.access = 1;
                     muser.created_at = DateTime.Now;
                     muser.updated_at = DateTime.Now;
                     muser.created_by = 1;
                     muser.updated_by = 1;
                     muser.status = 1;
+
+                    // Thêm user vào cơ sở dữ liệu
                     db.users.Add(muser);
                     db.SaveChanges();
-                    Message.set_flash("Tạo user  thành công", "success");
+
+                    Message.set_flash("Tạo user thành công", "success");
                     Response.Redirect("~/");
                 }
             }
