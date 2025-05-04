@@ -59,19 +59,8 @@ namespace ShopNoiThat.Controllers
             if (!Response.IsRequestBeingRedirected)
                 Response.Redirect("~/");
         }
-        private bool IsCaptchaValid(string response)
-        {
-            // Thay bằng Secret Key của bạn (không để xuống dòng)
-            var secret = "6LfoCywrAAAAAP5pQuyrBV1ZvQ3OpfS5UgJ2Ags-\r\n";
-            using (var client = new WebClient())
-            {
-                var result = client.DownloadString(
-                    $"https://www.google.com/recaptcha/api/siteverify?secret={secret}&response={response}"
-                );
-                var obj = Newtonsoft.Json.Linq.JObject.Parse(result);
-                return (bool)obj["success"];
-            }
-        }
+        
+
         public void logout()
         {
             Session["id"] = "";
@@ -219,6 +208,20 @@ Nếu đối tượng Muser không hợp lệ, phương thức trả về view "
                 return View("sendMailFinish");
             }
         }
+        private bool IsCaptchaValid(string response)
+        {
+            // Thay bằng Secret Key của bạn (không để xuống dòng)
+            var secret = "6LfoCywrAAAAAP5pQuyrBV1ZvQ3OpfS5UgJ2Ags-\r\n";
+            using (var client = new WebClient())
+            {
+                var result = client.DownloadString(
+                    $"https://www.google.com/recaptcha/api/siteverify?secret={secret}&response={response}"
+                );
+                var obj = Newtonsoft.Json.Linq.JObject.Parse(result);
+                return (bool)obj["success"];
+            }
+        }
+
 
     }
 }
