@@ -86,6 +86,29 @@ namespace ShopNoiThat.Areas.Admin.Controllers
             }
             return View("_information", muser);
         }
+        public ActionResult VerifyOTP(int userId, string otp)
+        {
+            var user = db.users.FirstOrDefault(m => m.ID == userId);
+
+            if (user != null && user.otp_code == otp && user.otp_created_at != null && user.otp_created_at.Value.AddMinutes(5) > DateTime.Now)
+            {
+                // OTP đúng và còn hiệu lực
+                user.locked_until = null;  // Mở khóa tài khoản
+                user.failed_login_count = 0;  // Reset số lần đăng nhập sai
+                user.otp_code = null;  // Xóa mã OTP
+                user.otp_created_at = null;  // Xóa thời gian tạo OTP
+                db.SaveChanges();
+
+                Message.set_flash("Mã OTP hợp lệ. Tài khoản của bạn đã được mở khóa.", "success");
+                return Redirect("~/");  // Chuyển về trang chủ
+            }
+            else
+            {
+                // OTP không đúng hoặc hết hạn
+                Message.set_flash("Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.", "error");
+                return RedirectToAction("login");  // Quay lại trang đăng nhập
+            }
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]

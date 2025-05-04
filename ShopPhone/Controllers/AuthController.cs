@@ -12,45 +12,104 @@ using ShopNoiThat.Library;
 
 namespace ShopNoiThat.Controllers
 {
+
     public class AuthController : Controller
     {
         ShopNoiThatDbContext db = new ShopNoiThatDbContext();
         // lấy giá trị r mã hoá 
         // dò vs database 
+        public string GenerateOTP()
+        {
+            Random rand = new Random();
+            return rand.Next(100000, 999999).ToString(); // 6 số
+        }
+
         public void login(FormCollection fc)
         {
             string Username = fc["uname"];
             string Pass = Mystring.ToMD5(fc["psw"]);
-            string PassNoMD5 = fc["psw"];
-            var user_account = db.users.Where(m => (m.username == Username) && (m.access == 1));
 
-            if (user_account.Count() == 0)
+            var user = db.users.FirstOrDefault(m => m.username == Username && m.access == 1);
+
+            if (user == null)
             {
                 Message.set_flash("Tên đăng nhập không tồn tại", "error");
             }
             else
             {
-                var pass_account = db.users.Where(m => m.status == 1 && (m.password == Pass ) && (m.access == 1));
-
-                if (pass_account.Count() == 0)
+                if (user.locked_until != null && user.locked_until > DateTime.Now)
                 {
-                    Message.set_flash("Mật khẩu không đúng", "error");
-                }
+                    // Nếu tài khoản bị khóa, kiểm tra OTP
+                    string enteredOtp = fc["otp"];  // Nhận OTP từ form
 
+                    if (string.IsNullOrEmpty(enteredOtp))
+                    {
+                        Message.set_flash("Tài khoản bị khóa. Vui lòng nhập mã OTP để mở khóa.", "error");
+                        Response.Redirect("~/login"); // thêm dòng này
+                    }
+                    else if (user.otp_code == enteredOtp && user.otp_created_at != null && user.otp_created_at.Value.AddMinutes(5) > DateTime.Now)
+                    {
+                        // Kiểm tra OTP và thời gian hợp lệ
+                        user.failed_login_count = 0;
+                        user.locked_until = null;
+                        user.otp_code = null;
+                        user.otp_created_at = null;
+
+                        db.SaveChanges();
+                        Message.set_flash("Tài khoản đã được mở khóa. Bạn có thể đăng nhập.", "success");
+                    }
+                    else
+                    {
+                        Message.set_flash("Mã OTP không hợp lệ hoặc đã hết hạn.", "error");
+                    }
+                }
                 else
                 {
-                    var user = user_account.First();
-                    Session["id"] = user.ID;
-                    Session["user"] = user.username;
-                    ViewBag.name = Session["user"];
-                    if (!Response.IsRequestBeingRedirected)
+                    if (user.password != Pass || user.status != 1)
+                    {
+                        user.failed_login_count = (user.failed_login_count ?? 0) + 1;
+                        user.last_failed_login = DateTime.Now;
+
+                        if (user.failed_login_count >= 5)
+                        {
+                            user.locked_until = DateTime.Now.AddMinutes(5);
+                            string otp = GenerateOTP();
+                            user.otp_code = otp;
+                            user.otp_created_at = DateTime.Now;
+                            SendOTP(user.email, otp);
+
+                            Message.set_flash("Nhập sai quá 5 lần. Tài khoản tạm khóa 5 phút. Vui lòng kiểm tra email để lấy mã OTP.", "error");
+                        }
+                        else
+                        {
+                            Message.set_flash("Mật khẩu không đúng", "error");
+                        }
+
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        user.failed_login_count = 0;
+                        user.locked_until = null;
+                        user.otp_code = null;
+                        user.otp_created_at = null;
+                        db.SaveChanges();
+
+                        Session["id"] = user.ID;
+                        Session["user"] = user.username;
+                        ViewBag.name = Session["user"];
+
                         Message.set_flash("Đăng nhập thành công", "success");
                         Response.Redirect("~/");
+                    }
                 }
             }
+
             if (!Response.IsRequestBeingRedirected)
                 Response.Redirect("~/");
         }
+
+
         public void logout()
         {
             Session["id"] = "";
@@ -198,6 +257,24 @@ Nếu đối tượng Muser không hợp lệ, phương thức trả về view "
                 return View("sendMailFinish");
             }
         }
+        public void SendOTP(string toEmail, string otp)
+        {
+            MailMessage mail = new MailMessage();
+            mail.To.Add(toEmail);
+            mail.From = new MailAddress("2224802010123@student.tdmu.edu.vn"); // Gmail của bạn
+            mail.Subject = "Mã OTP xác minh tài khoản";
+            mail.Body = $"Mã OTP của bạn là: {otp}. Mã có hiệu lực trong 5 phút.";
+
+            SmtpClient smtp = new SmtpClient();
+            smtp.Host = "smtp.gmail.com";
+            smtp.Port = 587;
+            smtp.EnableSsl = true;
+            smtp.UseDefaultCredentials = false;
+            smtp.Credentials = new NetworkCredential("2224802010123@student.tdmu.edu.vn", "zwpg ozbj acnd eula");
+
+            smtp.Send(mail);
+        }
+
 
     }
 }
